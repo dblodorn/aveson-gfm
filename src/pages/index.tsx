@@ -1,11 +1,11 @@
 import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
-
+import Link from "next/link";
 import { CampaignData, getAllCampaigns } from "../lib/getGFMCampaignData";
 
 export const getServerSideProps = (async ({ res }) => {
   res.setHeader(
     "Cache-Control",
-    "public, s-maxage=10, stale-while-revalidate=59"
+    "public, s-maxage=10, stale-while-revalidate=300"
   );
   
   const campaigns: CampaignData[] = await getAllCampaigns();
@@ -18,10 +18,15 @@ export default function Home({
   return (
     <div className="grid grid-cols-1 gap-2 p-4">
       <h1>Aveson Go Fund Me Campagins:</h1>
-      <a className="underline" href="/api/all">Data</a>
+      <Link className="underline" href="/api/all">
+        Data
+      </Link>
       <ul className="grid grid-cols-4 gap-4">
         {campaigns.map((campaign) => (
-          <li className="container p-2 border border-1 border-inherit" key={campaign.campaignName}>
+          <li
+            className="container p-2 border border-1 border-inherit"
+            key={campaign.campaignName}
+          >
             <img
               className="w-full aspect-square object-cover"
               src={campaign.photo}
