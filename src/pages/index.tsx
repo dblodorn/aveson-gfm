@@ -2,12 +2,12 @@ import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
 import Link from "next/link";
 import { CampaignDataWithFunding, getAllCampaigns } from "../lib/getGFMCampaignData";
 
-export const maxDuration = 60;
+export const maxDuration = 25;
 
 export const getServerSideProps = (async ({ res }) => {  
   res.setHeader(
     "Cache-Control",
-    "public, s-maxage=10, stale-while-revalidate=300"
+    "public, s-maxage=240, stale-while-revalidate=1200"
   );
 
   const campaigns: CampaignDataWithFunding[] = await getAllCampaigns();

@@ -12,5 +12,11 @@ export default async function handler(
 ) {
   const { page } = req.query;
   const campaignData = await getAllCampaigns(Number(page) || undefined);
+  
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=240, stale-while-revalidate=1200"
+  );
+  
   res.status(200).json(campaignData);
 }
