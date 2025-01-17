@@ -1,0 +1,17 @@
+export const CAMPAIGNS = [
+  "support-aveson-after-the-eaton-fire",
+  "help-the-agraphiotis-family-rebuild-after-fire",
+  "help-ariane-and-james-after-fire",
+  "help-julius-and-jody-rebuild-after-fire",
+  "help-cole-and-mari-rebuild-after-fire",
+  "help-mike-and-danielle-rebuild-after-fire",
+  "help-us-restore-our-haitian-legacy",
+  "help-camils-family-find-a-new-home",
+  "support-the-burg-family-after-the-eaton-fire-in-altadena",
+  "aid-lauren-and-her-pets-in-need",
+  "altadena-fire-victims-help-rosa-rebuild",
+  "eaton-fire-relief-for-soninlaws-family",
+  "donate-to-support-team-anne-and-leah",
+  "from-ashes-to-a-new-beginning-help-jessicas-family",
+  "fire-recovery-for-jess-shaun-isa",
+];
