@@ -1,14 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getGFMCampaignData, CampaignData } from "../../lib/getGFMCampaignData";
+import {
+  getGFMCampaignData,
+  CampaignDataWithFunding,
+} from "../../lib/getGFMCampaignData";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CampaignData>,
+  res: NextApiResponse<CampaignDataWithFunding>
 ) {
   const { name } = req.query;
 
   const campaignData = await getGFMCampaignData(name as string);
 
-  res.status(200).json(campaignData);
+  if (campaignData) res.status(200).json(campaignData);
 }

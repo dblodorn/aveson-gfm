@@ -1,37 +1,67 @@
-import phantom from "phantom";
 import * as cheerio from "cheerio";
-import { CAMPAIGNS } from "../consts/campaigns";
+import { INDIVIDUAL_AID, CampaignData } from "../consts/campaigns";
+import { gfmUrlToId } from "./parseAidCSV";
 
-export type CampaignData = {
-  campaignName: string;
-  status: string;
-  title: string;
-  currentAmount: number;
-  goalAmount: number;
-  percentage: number;
-  fundName: string;
+export type CampaignDataWithFunding = {
+  success: boolean;
   photo: string;
-};
+  fundName: string;
+  fundingData: {
+    currentAmount: {
+      raw: number;
+      formatted: string;
+    };
+    goalAmount: {
+      raw: number;
+      formatted: string;
+    };
+    percentage: number;
+  };
+} & CampaignData;
 
-export async function getGFMCampaignData(campaignName: string) {
-  const instance = await phantom.create();
-  const page = await instance.createPage();
-  
-  await page.on("onResourceRequested", function (requestData) {
-    console.info("Requesting", requestData.url);
-  });
+export async function getGFMCampaignData(id: string) {
+  const uri = `https://www.gofundme.com/f/${id}`;
 
-  const status = await page.open(`https://www.gofundme.com/f/${campaignName}`);
-  const content = await page.property("content");
+  const dataFromCsv = INDIVIDUAL_AID.goFundMe.find(
+    (aid) => gfmUrlToId(aid.link) === id
+  ) as CampaignData;
 
-  await instance.exit();
-
+  // As long as GFM use's next js server rendering then we can scrape the data from the page
+  const content = await fetch(uri).then((res) => res.text());
   const $ = cheerio.load(content);
-  const title = $("title").text();
-  const nextData = $("#__NEXT_DATA__").html();
 
-  const parsedData =
-    nextData && JSON.parse(nextData)["props"]["pageProps"]["__APOLLO_STATE__"];
+  // Godundme's front end is built with next js so has a __NEXT_DATA__ script tag containing the page props:
+  // https://github.com/vercel/next.js/discussions/15117
+  let parsedData = null;
+
+  try {
+    const nextData = $("#__NEXT_DATA__").html();
+    parsedData =
+      nextData &&
+      JSON.parse(nextData)["props"]["pageProps"]["__APOLLO_STATE__"];
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (!parsedData) {
+    return {
+      success: false,
+      photo: "",
+      fundName: "",
+      ...dataFromCsv,
+      fundingData: {
+        currentAmount: {
+          raw: 0,
+          formatted: "$0",
+        },
+        goalAmount: {
+          raw: 0,
+          formatted: "$0",
+        },
+        percentage: 0,
+      },
+    };
+  }
 
   const fundraiserData = Object.keys(parsedData).reduce((acc, key) => {
     if (key.startsWith("Fundraiser")) {
@@ -46,25 +76,47 @@ export async function getGFMCampaignData(campaignName: string) {
   const parsedFundraiserData =
     fundraiserData[firstFundraiserKey as keyof typeof fundraiserData];
 
-  const currentAmount = parsedFundraiserData["currentAmount"]["amount"];
-  const goalAmount = parsedFundraiserData["goalAmount"]["amount"];
-  const percentage = Number(((currentAmount / goalAmount) * 100).toFixed(2));
+  // Aid amount
+  const currentAmount: number = parsedFundraiserData["currentAmount"]["amount"];
+  const goalAmount: number = parsedFundraiserData["goalAmount"]["amount"];
+  const percentage: number = Number(
+    ((currentAmount / goalAmount) * 100).toFixed(2)
+  );
   const photo = parsedFundraiserData["fundraiserImageUrl"];
   const fundName = parsedFundraiserData["fundName"];
 
   return {
-    campaignName,
-    status,
-    title,
-    currentAmount,
-    goalAmount,
-    percentage,
-    fundName,
+    success: true,
+    ...dataFromCsv,
     photo,
+    fundName,
+    fundingData: {
+      currentAmount: {
+        raw: currentAmount,
+        formatted: `$${currentAmount.toLocaleString()}`,
+      },
+      goalAmount: {
+        raw: goalAmount,
+        formatted: `$${goalAmount.toLocaleString()}`,
+      },
+      percentage,
+    },
   };
 }
 
-export async function getAllCampaigns() {
+export async function getAllCampaigns(page?: number) {
+  // 58 go fundm me campaigns - 1 page = 5 campaigns
+  const campaignSegments = () => {
+    if (!!page) {
+      const offset = (page - 1) * 5;
+      return INDIVIDUAL_AID.goFundMe.slice(offset, offset + 5);
+    } else {
+      return INDIVIDUAL_AID.goFundMe;
+    }
+  }
+
+  const CAMPAIGNS = campaignSegments().map((aid) => gfmUrlToId(aid.link)).filter((id) => id !== null);
+
   const campaignDataPromises = CAMPAIGNS.map((campaign) =>
     getGFMCampaignData(campaign)
   );

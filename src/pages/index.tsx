@@ -1,16 +1,16 @@
 import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
 import Link from "next/link";
-import { CampaignData, getAllCampaigns } from "../lib/getGFMCampaignData";
+import { CampaignDataWithFunding, getAllCampaigns } from "../lib/getGFMCampaignData";
 
 export const getServerSideProps = (async ({ res }) => {
   res.setHeader(
     "Cache-Control",
     "public, s-maxage=10, stale-while-revalidate=300"
   );
-  
-  const campaigns: CampaignData[] = await getAllCampaigns();
+
+  const campaigns: CampaignDataWithFunding[] = await getAllCampaigns();
   return { props: { campaigns } };
-}) satisfies GetServerSideProps<{ campaigns: CampaignData[] }>;
+}) satisfies GetServerSideProps<{ campaigns: CampaignDataWithFunding[] }>;
 
 export default function Home({
   campaigns,
@@ -25,7 +25,7 @@ export default function Home({
         {campaigns.map((campaign) => (
           <li
             className="container p-2 border border-1 border-inherit"
-            key={campaign.campaignName}
+            key={campaign.title}
           >
             <img
               className="w-full aspect-square object-cover"
@@ -35,9 +35,10 @@ export default function Home({
             <div>
               <h2>{campaign.title}</h2>
               <p>
-                {campaign.currentAmount} / {campaign.goalAmount}
+                {campaign.fundingData.currentAmount.formatted} /{" "}
+                {campaign.fundingData.goalAmount.formatted}
               </p>
-              <p>{campaign.percentage}%</p>
+              <p>{campaign.fundingData.percentage}%</p>
             </div>
           </li>
         ))}

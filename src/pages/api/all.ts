@@ -1,16 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getGFMCampaignData, CampaignData } from "../../lib/getGFMCampaignData";
+import {
+  getAllCampaigns,
+  CampaignDataWithFunding,
+} from "../../lib/getGFMCampaignData";
 
-import { CAMPAIGNS } from "../../consts/campaigns";
-
-export default async function handler(_: NextApiRequest, res: NextApiResponse<CampaignData[]>) {
-  const campaignDataPromises = CAMPAIGNS.map((campaign) =>
-    getGFMCampaignData(campaign)
-  );
-
-  const campaignData = await Promise.all(campaignDataPromises).then(
-    (data) => data
-  );
-  
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CampaignDataWithFunding[]>
+) {
+  const { page } = req.query;
+  const campaignData = await getAllCampaigns(Number(page) || undefined);
   res.status(200).json(campaignData);
 }
